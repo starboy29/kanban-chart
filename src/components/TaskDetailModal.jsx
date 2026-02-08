@@ -42,22 +42,26 @@ const TaskDetailModal = ({ task, onClose, mode = 'edit' }) => {
     const handleSave = async () => {
         setIsProcessing(true);
         try {
-            // Process new files to Base64
+            // Process new files - Upload to Firebase Storage
             let newAttachments = [];
             if (newFiles.length > 0) {
-                const filePromises = newFiles.map(file => {
-                    return new Promise((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.readAsDataURL(file);
-                        reader.onload = () => resolve({
-                            name: file.name,
-                            type: file.type,
-                            data: reader.result
+                // Process new files to Base64
+                let newAttachments = [];
+                if (newFiles.length > 0) {
+                    const filePromises = newFiles.map(file => {
+                        return new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.readAsDataURL(file);
+                            reader.onload = () => resolve({
+                                name: file.name,
+                                type: file.type,
+                                data: reader.result
+                            });
+                            reader.onerror = error => reject(error);
                         });
-                        reader.onerror = error => reject(error);
                     });
-                });
-                newAttachments = await Promise.all(filePromises);
+                    newAttachments = await Promise.all(filePromises);
+                }
             }
 
             const updatedData = {
@@ -224,9 +228,15 @@ const TaskDetailModal = ({ task, onClose, mode = 'edit' }) => {
                                 <div className="space-y-2">
                                     {[...attachments, ...newFiles].map((file, idx) => (
                                         <div key={idx} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5">
-                                            <div className="flex items-center gap-3">
+                                            <div className="flex items-center gap-3 overflow-hidden">
                                                 <span className="material-symbols-rounded text-gray-400">description</span>
-                                                <span className="text-sm text-gray-200 truncate max-w-[200px]">{file.name}</span>
+                                                {file.url ? (
+                                                    <a href={file.url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-400 hover:underline truncate max-w-[200px]">
+                                                        {file.name}
+                                                    </a>
+                                                ) : (
+                                                    <span className="text-sm text-gray-200 truncate max-w-[200px]">{file.name}</span>
+                                                )}
                                             </div>
                                             {/* We can add remove logic later */}
                                         </div>

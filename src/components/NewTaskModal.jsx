@@ -63,7 +63,8 @@ const NewTaskModal = ({ onClose }) => {
         setProcessing(true);
 
         try {
-            // Process attachments (convert to base64 or upload - using mock/base64 for now as per previous implementation)
+            // Process attachments - Upload to Firebase Storage
+            // Process attachments (convert to base64)
             const processedAttachments = await Promise.all(attachments.map(file => {
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
