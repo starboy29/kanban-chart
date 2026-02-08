@@ -1,12 +1,14 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, addDoc, updateDoc, doc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp, setDoc, getDoc } from 'firebase/firestore';
+import { useAuth } from './AuthContext';
 
 const TasksContext = createContext();
 
 export const useTasks = () => useContext(TasksContext);
 
 export const TasksProvider = ({ children }) => {
+    const { user, loading: authLoading } = useAuth(); // Get user status
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -25,6 +27,8 @@ export const TasksProvider = ({ children }) => {
 
     // Fetch Subjects from Firestore
     useEffect(() => {
+        if (!user || authLoading) return; // Wait for user
+
         const fetchSubjects = async () => {
             const settingsRef = doc(db, 'settings', 'general');
             try {
@@ -45,10 +49,18 @@ export const TasksProvider = ({ children }) => {
             }
         };
         fetchSubjects();
-    }, []);
+    }, [user, authLoading]);
 
     // Real-time synchronization with Firestore
     useEffect(() => {
+        if (!user || authLoading) {
+            setTasks([]);
+            setLoading(false);
+            return;
+        }
+
+        setLoading(true);
+
         try {
             const q = query(collection(db, "tasks"), orderBy("createdAt", "desc"));
             const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -68,8 +80,8 @@ export const TasksProvider = ({ children }) => {
                 console.error("Error fetching tasks: ", err);
                 setError(err.message);
                 setLoading(false);
-                // Fallback to local state if Firebase fails
-                if (tasks.length === 0) {
+                // Fallback to local state if Firebase fails AND it wasn't a permission error
+                if (tasks.length === 0 && err.code !== 'permission-denied') {
                     setTasks([
                         { id: '1', title: 'Lab Report: Thermodynamics', status: 'todo', subject: 'Physics', date: '23:59 PM', isUrgent: true, source: 'telegram' },
                         { id: '2', title: 'Calculus Quiz Prep - Chapter 4', status: 'todo', subject: 'Math', date: '14:00 PM', isUrgent: true, source: 'whatsapp' },
@@ -83,7 +95,7 @@ export const TasksProvider = ({ children }) => {
             setError(err.message);
             setLoading(false);
         }
-    }, []);
+    }, [user, authLoading]);
 
     const addTask = async (newTask) => {
         try {
