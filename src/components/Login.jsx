@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 const Login = () => {
     const { signIn, user } = useAuth();
     const navigate = useNavigate();
+    const [error, setError] = React.useState('');
 
     useEffect(() => {
         if (user) {
@@ -13,10 +14,13 @@ const Login = () => {
     }, [user, navigate]);
 
     const handleLogin = async () => {
+        setError('');
         try {
             await signIn();
         } catch (error) {
             console.error(error);
+            // Show the actual error message or code to the user
+            setError(error.message || "Failed to sign in");
         }
     };
 
@@ -28,6 +32,12 @@ const Login = () => {
                 </div>
                 <h1 className="text-2xl font-bold mb-2">Welcome Back</h1>
                 <p className="text-gray-400 mb-8">Sign in to access your Kanban board</p>
+
+                {error && (
+                    <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 text-sm rounded-lg text-left">
+                        {error}
+                    </div>
+                )}
 
                 <button
                     onClick={handleLogin}
