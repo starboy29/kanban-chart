@@ -1,0 +1,54 @@
+import React, { useState } from 'react';
+import GlobalErrorBanner from './components/GlobalErrorBanner';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Sidebar from './components/Sidebar';
+import Topbar from './components/Topbar';
+import KanbanBoard from './components/KanbanBoard';
+import Dashboard from './components/Dashboard';
+import Calendar from './components/Calendar';
+import Inbox from './components/Inbox';
+import NewTaskModal from './components/NewTaskModal';
+import SubjectPage from './components/SubjectPage';
+import Settings from './components/Settings';
+import { TasksProvider } from './context/TasksContext';
+
+function App() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  return (
+    <Router>
+      <TasksProvider>
+        <div className="flex h-screen bg-[var(--color-background-dark)] overflow-hidden text-white font-display">
+          {/* Sidebar */}
+          <Sidebar onNewTask={() => setIsModalOpen(true)} />
+
+
+
+          {/* Main Content Area */}
+          <main className="flex-1 flex flex-col min-w-0 bg-[var(--color-background-light)] dark:bg-[var(--color-background-dark)]">
+            <GlobalErrorBanner />
+            <Topbar />
+
+            {/* Dashboard Content */}
+            <div className="flex-1 overflow-auto custom-scrollbar">
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/board" element={<div className="h-full overflow-hidden p-8"><KanbanBoard onNewTask={() => setIsModalOpen(true)} /></div>} />
+                <Route path="/calendar" element={<Calendar />} />
+                <Route path="/inbox" element={<Inbox />} />
+                <Route path="/subject/:subjectName" element={<SubjectPage onNewTask={() => setIsModalOpen(true)} />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </div>
+          </main>
+
+          {/* Modals */}
+          {isModalOpen && <NewTaskModal onClose={() => setIsModalOpen(false)} />}
+        </div>
+      </TasksProvider>
+    </Router>
+  );
+}
+
+export default App;
