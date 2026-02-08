@@ -11,13 +11,27 @@ import NewTaskModal from './components/NewTaskModal';
 import SubjectPage from './components/SubjectPage';
 import Settings from './components/Settings';
 import Login from './components/Login';
-import { TasksProvider } from './context/TasksContext';
+import Welcome from './components/Welcome';
+import { TasksProvider, useTasks } from './context/TasksContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
-  if (loading) return <div>Loading...</div>;
+  const { isNewUser, settingsLoading } = useTasks();
+
+  if (loading || settingsLoading) return <div className="flex items-center justify-center h-screen bg-[#141118] text-white">Loading...</div>;
   if (!user) return <Navigate to="/login" replace />;
+  if (isNewUser) return <Navigate to="/welcome" replace />;
+  return children;
+};
+
+const OnboardingRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+  const { isNewUser, settingsLoading } = useTasks();
+
+  if (loading || settingsLoading) return <div className="flex items-center justify-center h-screen bg-[#141118] text-white">Loading...</div>;
+  if (!user) return <Navigate to="/login" replace />;
+  if (!isNewUser) return <Navigate to="/" replace />;
   return children;
 };
 
@@ -60,6 +74,11 @@ function App() {
         <TasksProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/welcome" element={
+              <OnboardingRoute>
+                <Welcome />
+              </OnboardingRoute>
+            } />
             <Route path="/*" element={
               <ProtectedRoute>
                 <AppContent />

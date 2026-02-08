@@ -2,7 +2,7 @@ import { useTasks } from '../context/TasksContext';
 import { useState } from 'react';
 
 const Settings = () => {
-    const { subjects, addSubject, deleteSubject, updateSubject } = useTasks();
+    const { subjects, addSubject, deleteSubject, updateSubject, tags, addTag, deleteTag, updateTag } = useTasks();
     const [newSubject, setNewSubject] = useState('');
     const [editingSubject, setEditingSubject] = useState(null);
     const [editValue, setEditValue] = useState('');
@@ -31,6 +31,37 @@ const Settings = () => {
     const cancelEditing = () => {
         setEditingSubject(null);
         setEditValue('');
+    };
+
+    // Tag Management Handlers
+    const [newTag, setNewTag] = useState('');
+    const [editingTag, setEditingTag] = useState(null);
+    const [editTagValue, setEditTagValue] = useState('');
+
+    const handleAddTag = (e) => {
+        e.preventDefault();
+        if (newTag.trim()) {
+            addTag(newTag.trim());
+            setNewTag('');
+        }
+    };
+
+    const startEditingTag = (tag) => {
+        setEditingTag(tag);
+        setEditTagValue(tag);
+    };
+
+    const saveTag = () => {
+        if (editTagValue.trim() && editTagValue !== editingTag) {
+            updateTag(editingTag, editTagValue.trim());
+        }
+        setEditingTag(null);
+        setEditTagValue('');
+    };
+
+    const cancelEditingTag = () => {
+        setEditingTag(null);
+        setEditTagValue('');
     };
 
     return (
@@ -111,6 +142,69 @@ const Settings = () => {
                                                 onClick={() => deleteSubject(sub)}
                                                 className="text-gray-500 hover:text-red-400"
                                                 title="Delete Subject"
+                                            >
+                                                <span className="material-symbols-rounded text-[16px]">close</span>
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Tag Management Section */}
+                <div className="p-6 border-b border-white/5">
+                    <h3 className="text-lg font-semibold mb-4">Manage Tags</h3>
+                    <div className="mb-6 flex gap-2">
+                        <input
+                            type="text"
+                            value={newTag}
+                            onChange={(e) => setNewTag(e.target.value)}
+                            placeholder="New tag name (e.g. Urgent)..."
+                            className="flex-1 bg-[#27272a] border border-white/10 rounded-lg px-4 py-2 text-white outline-none focus:border-[var(--color-primary)]"
+                            onKeyDown={(e) => e.key === 'Enter' && handleAddTag(e)}
+                        />
+                        <button
+                            onClick={handleAddTag}
+                            disabled={!newTag.trim()}
+                            className="px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg font-medium hover:opacity-90 disabled:opacity-50"
+                        >
+                            Add
+                        </button>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                        {tags.map(tag => (
+                            <div key={tag} className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg border border-white/5 hover:border-white/20 transition-colors group">
+                                {editingTag === tag ? (
+                                    <input
+                                        type="text"
+                                        value={editTagValue}
+                                        onChange={(e) => setEditTagValue(e.target.value)}
+                                        onBlur={saveTag}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') saveTag();
+                                            if (e.key === 'Escape') cancelEditingTag();
+                                        }}
+                                        autoFocus
+                                        className="bg-transparent text-sm text-white outline-none w-24 border-b border-[var(--color-primary)]"
+                                    />
+                                ) : (
+                                    <>
+                                        <span className="text-sm text-gray-200">#{tag}</span>
+                                        <div className="flex gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button
+                                                onClick={() => startEditingTag(tag)}
+                                                className="text-gray-500 hover:text-blue-400"
+                                                title="Rename Tag"
+                                            >
+                                                <span className="material-symbols-rounded text-[16px]">edit</span>
+                                            </button>
+                                            <button
+                                                onClick={() => deleteTag(tag)}
+                                                className="text-gray-500 hover:text-red-400"
+                                                title="Delete Tag"
                                             >
                                                 <span className="material-symbols-rounded text-[16px]">close</span>
                                             </button>

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { collection, addDoc, updateDoc, doc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp, setDoc, getDoc } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp, setDoc, getDoc, where } from 'firebase/firestore';
 import { useAuth } from './AuthContext';
 
 const TasksContext = createContext();
@@ -21,34 +21,42 @@ export const TasksProvider = ({ children }) => {
         { id: 'done', title: 'Done' }
     ]);
     const [error, setError] = useState(null);
+    const [isNewUser, setIsNewUser] = useState(false);
+    const [settingsLoading, setSettingsLoading] = useState(true);
 
-    // Filtered / Current Subjects
+    // Filtered / Current Subjects & Tags
     const [subjects, setSubjects] = useState([]);
+    const [tags, setTags] = useState([]);
 
-    // Fetch Subjects from Firestore
+    // Fetch Settings (Subjects & Tags) from Firestore
     useEffect(() => {
-        if (!user || authLoading) return; // Wait for user
+        if (!user) {
+            setSettingsLoading(false);
+            return;
+        }
+        if (authLoading) return;
 
-        const fetchSubjects = async () => {
-            const settingsRef = doc(db, 'settings', 'general');
-            try {
-                const docSnap = await getDoc(settingsRef);
-                if (docSnap.exists()) {
-                    setSubjects(docSnap.data().subjects || []);
-                } else {
-                    // Initialize settings doc if not exists
-                    const defaultSubjects = [
-                        'Physics', 'Math', 'Literature', 'Biology', 'History',
-                        'Computer Science', 'Art History', 'Personal'
-                    ];
-                    await setDoc(settingsRef, { subjects: defaultSubjects });
-                    setSubjects(defaultSubjects);
-                }
-            } catch (error) {
-                console.error("Error fetching subjects:", error);
+        setSettingsLoading(true);
+        const settingsRef = doc(db, 'users', user.uid, 'settings', 'general');
+
+        const unsubscribe = onSnapshot(settingsRef, (docSnap) => {
+            if (docSnap.exists()) {
+                setSubjects(docSnap.data().subjects || []);
+                setTags(docSnap.data().tags || []);
+                setIsNewUser(false);
+            } else {
+                // New user! Do not auto-initialize.
+                setSubjects([]);
+                setTags([]);
+                setIsNewUser(true);
             }
-        };
-        fetchSubjects();
+            setSettingsLoading(false);
+        }, (error) => {
+            console.error("Error fetching settings:", error);
+            setSettingsLoading(false);
+        });
+
+        return () => unsubscribe();
     }, [user, authLoading]);
 
     // Real-time synchronization with Firestore
@@ -62,7 +70,11 @@ export const TasksProvider = ({ children }) => {
         setLoading(true);
 
         try {
-            const q = query(collection(db, "tasks"), orderBy("createdAt", "desc"));
+            const q = query(
+                collection(db, "tasks"),
+                where("userId", "==", user.uid),
+                orderBy("createdAt", "desc")
+            );
             const unsubscribe = onSnapshot(q, (querySnapshot) => {
                 const tasksData = querySnapshot.docs.map(doc => ({
                     id: doc.id,
@@ -101,6 +113,7 @@ export const TasksProvider = ({ children }) => {
         try {
             await addDoc(collection(db, "tasks"), {
                 ...newTask,
+                userId: user.uid,
                 status: 'todo',
                 createdAt: serverTimestamp()
             });
@@ -156,7 +169,7 @@ export const TasksProvider = ({ children }) => {
 
     const syncSubjects = async (newSubjects) => {
         try {
-            const settingsRef = doc(db, 'settings', 'general');
+            const settingsRef = doc(db, 'users', user.uid, 'settings', 'general');
             await setDoc(settingsRef, { subjects: newSubjects }, { merge: true });
         } catch (err) {
             console.error("Error syncing subjects:", err);
@@ -175,6 +188,46 @@ export const TasksProvider = ({ children }) => {
         const updated = subjects.filter(s => s !== subjectToDelete);
         setSubjects(updated);
         syncSubjects(updated);
+    };
+
+    // Tag Management
+    const syncTags = async (newTags) => {
+        try {
+            const settingsRef = doc(db, 'users', user.uid, 'settings', 'general');
+            await setDoc(settingsRef, { tags: newTags }, { merge: true });
+        } catch (err) {
+            console.error("Error syncing tags:", err);
+        }
+    };
+
+    const addTag = (newTag) => {
+        if (!tags.includes(newTag)) {
+            const updated = [...tags, newTag];
+            setTags(updated);
+            syncTags(updated);
+        }
+    };
+
+    const deleteTag = (tagToDelete) => {
+        const updated = tags.filter(t => t !== tagToDelete);
+        setTags(updated);
+        syncTags(updated);
+    };
+
+    const updateTag = async (oldTag, newTag) => {
+        if (tags.includes(oldTag) && !tags.includes(newTag)) {
+            const updated = tags.map(t => t === oldTag ? newTag : t);
+            setTags(updated);
+            syncTags(updated);
+
+            // Optimistic update for tasks (optional but good)
+            setTasks(prev => prev.map(t => {
+                if (t.tags && t.tags.includes(oldTag)) {
+                    return { ...t, tags: t.tags.map(tag => tag === oldTag ? newTag : tag) };
+                }
+                return t;
+            }));
+        }
     };
 
     const updateSubject = async (oldSubject, newSubject) => {
@@ -230,6 +283,10 @@ export const TasksProvider = ({ children }) => {
             addSubject,
             deleteSubject,
             updateSubject,
+            tags,
+            addTag,
+            deleteTag,
+            updateTag,
             searchQuery,
             setSearchQuery,
             loading,
@@ -239,7 +296,9 @@ export const TasksProvider = ({ children }) => {
             setFilterPriority,
             sortBy,
             setSortBy,
-            error
+            error,
+            isNewUser,
+            settingsLoading
         }}>
             {children}
         </TasksContext.Provider>

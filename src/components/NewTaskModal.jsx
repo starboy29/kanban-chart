@@ -3,7 +3,7 @@ import { useTasks } from '../context/TasksContext';
 import { format } from 'date-fns';
 
 const NewTaskModal = ({ onClose }) => {
-    const { addTask, subjects } = useTasks();
+    const { addTask, subjects, tags: globalTags, addTag } = useTasks();
     const [title, setTitle] = useState('');
     const [subject, setSubject] = useState(subjects[0] || 'Physics');
     const [date, setDate] = useState('');
@@ -38,9 +38,23 @@ const NewTaskModal = ({ onClose }) => {
 
     const handleAddTag = (e) => {
         e.preventDefault();
-        if (newTag.trim() && !tags.includes(newTag.trim())) {
-            setTags([...tags, newTag.trim()]);
+        const tag = newTag.trim();
+        if (tag) {
+            if (!globalTags.includes(tag)) {
+                addTag(tag); // Add to global list if new
+            }
+            if (!tags.includes(tag)) {
+                setTags([...tags, tag]); // Add to current task
+            }
             setNewTag('');
+        }
+    };
+
+    const toggleTag = (tag) => {
+        if (tags.includes(tag)) {
+            setTags(tags.filter(t => t !== tag));
+        } else {
+            setTags([...tags, tag]);
         }
     };
 
@@ -81,7 +95,7 @@ const NewTaskModal = ({ onClose }) => {
             const newTask = {
                 title,
                 subject,
-                date: date || 'No Due Date',
+                date: date || '', // Use ISO date string or empty
                 priority,
                 isUrgent: priority === 'urgent', // Backward compatibility for now
                 description,
@@ -151,12 +165,46 @@ const NewTaskModal = ({ onClose }) => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-400 mb-1.5">Due Date</label>
                                 <input
-                                    type="text" // Using text needed for flexible "Tomorrow" etc inputs, or change to date type
+                                    type="date"
                                     value={date}
                                     onChange={(e) => setDate(e.target.value)}
-                                    placeholder="e.g. Tomorrow, Oct 24"
-                                    className="w-full bg-[#27272a] border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-indigo-500 outline-none"
+                                    className="w-full bg-[#27272a] border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-indigo-500 outline-none [color-scheme:dark]"
                                 />
+                            </div>
+                        </div>
+
+                        {/* Quick Tags Selection */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-400 mb-1.5">Tags</label>
+                            <div className="flex flex-wrap gap-2 mb-2">
+                                {globalTags.map(tag => (
+                                    <button
+                                        key={tag}
+                                        onClick={() => toggleTag(tag)}
+                                        className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${tags.includes(tag)
+                                                ? 'bg-indigo-500/20 border-indigo-500 text-indigo-300'
+                                                : 'bg-[#27272a] border-white/10 text-gray-400 hover:border-white/30'
+                                            }`}
+                                    >
+                                        #{tag}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={newTag}
+                                    onChange={(e) => setNewTag(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleAddTag(e)}
+                                    placeholder="New tag..."
+                                    className="flex-1 bg-[#27272a] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-indigo-500 outline-none"
+                                />
+                                <button
+                                    onClick={handleAddTag}
+                                    className="p-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors"
+                                >
+                                    <span className="material-symbols-rounded">add</span>
+                                </button>
                             </div>
                         </div>
                     </div>
