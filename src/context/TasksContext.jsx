@@ -29,6 +29,9 @@ export const TasksProvider = ({ children }) => {
     const [calendarSyncEnabled, setCalendarSyncEnabled] = useState(false);
     const [calendarSyncing, setCalendarSyncing] = useState(false);
 
+    // Attendance data
+    const [attendanceData, setAttendanceData] = useState([]);
+
     // Filtered / Current Subjects & Tags
     const [subjects, setSubjects] = useState([]);
     const [tags, setTags] = useState([]);
@@ -49,11 +52,13 @@ export const TasksProvider = ({ children }) => {
                 setSubjects(docSnap.data().subjects || []);
                 setTags(docSnap.data().tags || []);
                 setCalendarSyncEnabled(docSnap.data().calendarSyncEnabled || false);
+                setAttendanceData(docSnap.data().attendanceData || []);
                 setIsNewUser(false);
             } else {
                 setSubjects([]);
                 setTags([]);
                 setCalendarSyncEnabled(false);
+                setAttendanceData([]);
                 setIsNewUser(true);
             }
             setSettingsLoading(false);
@@ -271,6 +276,19 @@ export const TasksProvider = ({ children }) => {
         }
     };
 
+    // Attendance controls
+    const updateAttendance = async (updatedData) => {
+        setAttendanceData(updatedData);
+        if (user) {
+            try {
+                const settingsRef = doc(db, 'users', user.uid, 'settings', 'general');
+                await setDoc(settingsRef, { attendanceData: updatedData }, { merge: true });
+            } catch (err) {
+                console.error("Error saving attendance:", err);
+            }
+        }
+    };
+
     // Google Calendar sync controls
     const toggleCalendarSync = async (enabled) => {
         setCalendarSyncEnabled(enabled);
@@ -365,6 +383,9 @@ export const TasksProvider = ({ children }) => {
             toggleCalendarSync,
             syncAllToCalendar,
             calendarSyncing,
+            // Attendance
+            attendanceData,
+            updateAttendance,
         }}>
             {children}
         </TasksContext.Provider>

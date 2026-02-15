@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTasks } from '../context/TasksContext';
 
-const Sidebar = ({ onNewTask }) => {
+const Sidebar = ({ onNewTask, onNavigate }) => {
     // 1. Destructure 'subjects' from context
     const { subjects, tasks } = useTasks();
 
@@ -60,10 +60,11 @@ const Sidebar = ({ onNewTask }) => {
                 {/* Overview Group */}
                 <div className="flex flex-col gap-1">
                     <div className="px-3 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Overview</div>
-                    <NavItem icon="dashboard" label="Dashboard" to="/" />
-                    <NavItem icon="view_kanban" label="Board" to="/board" />
-                    <NavItem icon="calendar_month" label="Calendar" to="/calendar" />
-                    <NavItem icon="inbox" label="Inbox" to="/inbox" badge={inboxCount > 0 ? inboxCount.toString() : null} />
+                    <NavItem icon="dashboard" label="Dashboard" to="/" onClick={onNavigate} />
+                    <NavItem icon="view_kanban" label="Board" to="/board" onClick={onNavigate} />
+                    <NavItem icon="calendar_month" label="Calendar" to="/calendar" onClick={onNavigate} />
+                    <NavItem icon="percent" label="Attendance" to="/attendance" onClick={onNavigate} />
+                    <NavItem icon="inbox" label="Inbox" to="/inbox" badge={inboxCount > 0 ? inboxCount.toString() : null} onClick={onNavigate} />
                 </div>
 
                 {/* Subjects Group */}
@@ -75,6 +76,7 @@ const Sidebar = ({ onNewTask }) => {
                             icon={getSubjectIcon(subject)}
                             label={subject}
                             to={`/subject/${subject.toLowerCase()}`}
+                            onClick={onNavigate}
                         />
                     ))}
                 </div>
@@ -84,6 +86,7 @@ const Sidebar = ({ onNewTask }) => {
             <div className="p-4 border-t border-white/10">
                 <NavLink
                     to="/settings"
+                    onClick={onNavigate}
                     className={({ isActive }) =>
                         `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors cursor-pointer group ${isActive ? 'bg-[var(--color-primary)]/20 text-[var(--color-primary)] font-medium' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`
                     }
@@ -96,10 +99,11 @@ const Sidebar = ({ onNewTask }) => {
     );
 };
 
-const NavItem = ({ icon, label, to, badge }) => {
+const NavItem = ({ icon, label, to, badge, onClick }) => {
     return (
         <NavLink
             to={to}
+            onClick={onClick}
             className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors cursor-pointer group ${isActive ? 'bg-[var(--color-primary)]/20 text-[var(--color-primary)] font-medium' : 'text-gray-400 hover:bg-white/5 hover:text-white mb-1'}`
             }

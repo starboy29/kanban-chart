@@ -50,12 +50,12 @@ const Calendar = () => {
     };
 
     return (
-        <div className="h-full flex flex-col p-6 text-white bg-[var(--color-background-light)] dark:bg-[var(--color-background-dark)]">
+        <div className="h-full flex flex-col p-3 md:p-6 text-white bg-[var(--color-background-light)] dark:bg-[var(--color-background-dark)]">
 
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-4">
-                    <h2 className="text-2xl font-bold capitalize">
+            <div className="flex items-center justify-between mb-4 md:mb-6">
+                <div className="flex items-center gap-2 md:gap-4">
+                    <h2 className="text-lg md:text-2xl font-bold capitalize">
                         {format(currentDate, 'MMMM yyyy')}
                     </h2>
                     <div className="flex gap-1 bg-[#27272a] rounded-lg p-1 border border-white/10">

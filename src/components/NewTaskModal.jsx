@@ -118,12 +118,12 @@ const NewTaskModal = ({ onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-            <div className="bg-[#18181b] w-full max-w-2xl rounded-2xl border border-white/10 shadow-2xl flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/70 backdrop-blur-sm md:p-4">
+            <div className="bg-[#18181b] w-full md:max-w-2xl rounded-t-2xl md:rounded-2xl border border-white/10 shadow-2xl flex flex-col max-h-[95vh] md:max-h-[90vh]">
 
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-white/5">
-                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <div className="flex items-center justify-between p-4 md:p-6 border-b border-white/5">
+                    <h2 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">
                         <span className="material-symbols-rounded text-indigo-400">add_task</span>
                         Create New Task
                     </h2>
@@ -133,7 +133,7 @@ const NewTaskModal = ({ onClose }) => {
                 </div>
 
                 {/* Scrollable Content */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6">
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 space-y-4 md:space-y-6">
 
                     {/* Main Info */}
                     <div className="space-y-4">
@@ -182,8 +182,8 @@ const NewTaskModal = ({ onClose }) => {
                                         key={tag}
                                         onClick={() => toggleTag(tag)}
                                         className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${tags.includes(tag)
-                                                ? 'bg-indigo-500/20 border-indigo-500 text-indigo-300'
-                                                : 'bg-[#27272a] border-white/10 text-gray-400 hover:border-white/30'
+                                            ? 'bg-indigo-500/20 border-indigo-500 text-indigo-300'
+                                            : 'bg-[#27272a] border-white/10 text-gray-400 hover:border-white/30'
                                             }`}
                                     >
                                         #{tag}

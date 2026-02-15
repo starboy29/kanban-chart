@@ -67,9 +67,9 @@ const Inbox = () => {
     };
 
     return (
-        <div className="p-8 text-white max-w-4xl mx-auto custom-scrollbar overflow-y-auto h-full pb-20">
-            <div className="flex justify-between items-center mb-8">
-                <h2 className="text-3xl font-bold">Inbox</h2>
+        <div className="p-4 md:p-8 text-white max-w-4xl mx-auto custom-scrollbar overflow-y-auto h-full pb-20">
+            <div className="flex justify-between items-center mb-6 md:mb-8">
+                <h2 className="text-2xl md:text-3xl font-bold">Inbox</h2>
                 <div className="text-sm text-gray-500">
                     {notifications.length} notifications
                 </div>
@@ -85,8 +85,8 @@ const Inbox = () => {
                     notifications.map(notif => (
                         <div key={notif.id} className={`bg-[#18181b] p-4 rounded-xl border border-white/5 flex gap-4 transition-colors cursor-pointer group ${notif.type === 'completed' ? 'opacity-75 hover:opacity-100' : 'hover:border-[var(--color-primary)]/50'}`}>
                             <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${notif.type === 'urgent' ? 'bg-red-500/20 text-red-400' :
-                                    notif.type === 'completed' ? 'bg-emerald-500/20 text-emerald-400' :
-                                        'bg-blue-500/20 text-blue-400'
+                                notif.type === 'completed' ? 'bg-emerald-500/20 text-emerald-400' :
+                                    'bg-blue-500/20 text-blue-400'
                                 }`}>
                                 <span className="material-symbols-rounded">
                                     {notif.type === 'urgent' ? 'warning' :
@@ -102,7 +102,7 @@ const Inbox = () => {
                                 <p className="text-sm text-gray-400 mt-1">{notif.message}</p>
                             </div>
                             <div className={`w-2 h-2 rounded-full self-center ${notif.type === 'urgent' ? 'bg-red-500' :
-                                    notif.type === 'new' ? 'bg-blue-500' : 'bg-transparent'
+                                notif.type === 'new' ? 'bg-blue-500' : 'bg-transparent'
                                 }`}></div>
                         </div>
                     ))

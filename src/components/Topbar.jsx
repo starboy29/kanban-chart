@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useTasks } from '../context/TasksContext';
 import { useAuth } from '../context/AuthContext';
 
-const Topbar = () => {
+const Topbar = ({ onMenuToggle }) => {
     const { searchQuery, setSearchQuery, viewMode, setViewMode } = useTasks();
     const { user, logout } = useAuth();
     const navigate = useNavigate();
@@ -19,38 +19,49 @@ const Topbar = () => {
     };
 
     return (
-        <header className="h-16 border-b border-white/10 flex items-center justify-between px-8 bg-[#141118]">
-            <div className="flex items-center gap-4">
-                <h2 className="text-xl font-bold text-white tracking-tight">Kanban Board</h2>
-                <div className="h-6 w-[1px] bg-gray-700 mx-2"></div>
-                <div className="flex items-center text-sm text-gray-400">
-                    <span className="mr-2">View:</span>
-                    <button
-                        onClick={() => setViewMode('board')}
-                        className={`flex items-center gap-1 font-medium px-2 py-1 rounded transition-colors ${viewMode === 'board'
-                            ? 'text-[var(--color-primary)] bg-[var(--color-primary)]/10'
-                            : 'hover:bg-white/5 hover:text-gray-200'
-                            }`}
-                    >
-                        <span className="material-symbols-rounded text-[18px]">view_kanban</span>
-                        Board
-                    </button>
-                    <button
-                        onClick={() => setViewMode('list')}
-                        className={`flex items-center gap-1 ml-2 font-medium px-2 py-1 rounded transition-colors ${viewMode === 'list'
-                            ? 'text-[var(--color-primary)] bg-[var(--color-primary)]/10'
-                            : 'hover:bg-white/5 hover:text-gray-200'
-                            }`}
-                    >
-                        <span className="material-symbols-rounded text-[18px]">list</span>
-                        List
-                    </button>
+        <header className="h-14 md:h-16 border-b border-white/10 flex items-center justify-between px-4 md:px-8 bg-[#141118]">
+            <div className="flex items-center gap-2 md:gap-4">
+                {/* Mobile Hamburger */}
+                <button
+                    onClick={onMenuToggle}
+                    className="md:hidden p-1.5 -ml-1 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                >
+                    <span className="material-symbols-rounded text-[24px]">menu</span>
+                </button>
+
+                <h2 className="text-lg md:text-xl font-bold text-white tracking-tight">Kanban Board</h2>
+
+                <div className="hidden md:flex items-center">
+                    <div className="h-6 w-[1px] bg-gray-700 mx-2"></div>
+                    <div className="flex items-center text-sm text-gray-400">
+                        <span className="mr-2">View:</span>
+                        <button
+                            onClick={() => setViewMode('board')}
+                            className={`flex items-center gap-1 font-medium px-2 py-1 rounded transition-colors ${viewMode === 'board'
+                                ? 'text-[var(--color-primary)] bg-[var(--color-primary)]/10'
+                                : 'hover:bg-white/5 hover:text-gray-200'
+                                }`}
+                        >
+                            <span className="material-symbols-rounded text-[18px]">view_kanban</span>
+                            Board
+                        </button>
+                        <button
+                            onClick={() => setViewMode('list')}
+                            className={`flex items-center gap-1 ml-2 font-medium px-2 py-1 rounded transition-colors ${viewMode === 'list'
+                                ? 'text-[var(--color-primary)] bg-[var(--color-primary)]/10'
+                                : 'hover:bg-white/5 hover:text-gray-200'
+                                }`}
+                        >
+                            <span className="material-symbols-rounded text-[18px]">list</span>
+                            List
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3 md:gap-6">
                 {/* Search */}
-                <div className="relative w-64 hidden md:block group">
+                <div className="relative w-40 md:w-64 hidden sm:block group">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-[var(--color-primary)] transition-colors">
                         <span className="material-symbols-rounded text-[20px]">search</span>
                     </span>
@@ -58,18 +69,18 @@ const Topbar = () => {
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full h-10 pl-10 pr-4 bg-[var(--color-surface-dark)] border-none rounded-lg text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-[var(--color-primary)] focus:outline-none transition-all"
+                        className="w-full h-9 md:h-10 pl-10 pr-4 bg-[var(--color-surface-dark)] border-none rounded-lg text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-[var(--color-primary)] focus:outline-none transition-all"
                         placeholder="Search tasks..."
                     />
                 </div>
 
                 {/* Notifications */}
-                <Link to="/inbox" className="relative p-2 text-gray-400 hover:bg-white/5 rounded-full transition-colors">
+                <Link to="/inbox" className="relative p-2 text-gray-400 hover:bg-white/5 rounded-full transition-colors hidden md:flex">
                     <span className="material-symbols-rounded">notifications</span>
                     <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-[#141118]"></span>
                 </Link>
 
-                <div className="h-6 w-[1px] bg-white/10 mx-1"></div>
+                <div className="h-6 w-[1px] bg-white/10 mx-1 hidden md:block"></div>
 
                 {/* Profile Dropdown */}
                 <div className="relative">
@@ -81,17 +92,17 @@ const Topbar = () => {
                             <img
                                 src={user.photoURL}
                                 alt={user.displayName}
-                                className="w-8 h-8 rounded-full border border-white/10"
+                                className="w-7 h-7 md:w-8 md:h-8 rounded-full border border-white/10"
                             />
                         ) : (
-                            <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold text-xs ring-2 ring-[#18181b]">
+                            <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold text-xs ring-2 ring-[#18181b]">
                                 {user?.email?.[0]?.toUpperCase() || 'U'}
                             </div>
                         )}
-                        <span className="text-sm font-medium text-gray-300 hidden sm:block max-w-[100px] truncate">
+                        <span className="text-sm font-medium text-gray-300 hidden lg:block max-w-[100px] truncate">
                             {user?.displayName || user?.email?.split('@')[0]}
                         </span>
-                        <span className="material-symbols-rounded text-gray-500 text-[18px]">expand_more</span>
+                        <span className="material-symbols-rounded text-gray-500 text-[18px] hidden sm:block">expand_more</span>
                     </button>
 
                     {isProfileOpen && (

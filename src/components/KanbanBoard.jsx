@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Column from './Column';
 import { useTasks } from '../context/TasksContext';
-import { DndContext, DragOverlay, closestCorners, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { DndContext, DragOverlay, closestCorners, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import TaskCard from './TaskCard';
 import ListView from './ListView';
 
@@ -16,6 +16,12 @@ const KanbanBoard = ({ onNewTask, filterSubject }) => {
         useSensor(PointerSensor, {
             activationConstraint: {
                 distance: 5,
+            },
+        }),
+        useSensor(TouchSensor, {
+            activationConstraint: {
+                delay: 200,
+                tolerance: 5,
             },
         })
     );
@@ -81,8 +87,8 @@ const KanbanBoard = ({ onNewTask, filterSubject }) => {
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
             >
-                <div className="flex-1 h-full overflow-x-auto overflow-y-hidden">
-                    <div className="h-full flex gap-6 min-w-[1000px]">
+                <div className="flex-1 h-full overflow-x-auto overflow-y-auto md:overflow-y-hidden">
+                    <div className="h-full flex flex-col md:flex-row gap-4 md:gap-6 md:min-w-[1000px] pb-4 md:pb-0">
                         {columns.map(col => (
                             <Column
                                 key={col.id}
