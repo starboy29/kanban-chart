@@ -2,19 +2,20 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { collection, addDoc, updateDoc, doc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp, setDoc, getDoc, where } from 'firebase/firestore';
 import { useAuth } from './AuthContext';
+import { createCalendarEvent, updateCalendarEvent, deleteCalendarEvent, syncAllTasks } from '../services/googleCalendarService';
 
 const TasksContext = createContext();
 
 export const useTasks = () => useContext(TasksContext);
 
 export const TasksProvider = ({ children }) => {
-    const { user, loading: authLoading } = useAuth(); // Get user status
+    const { user, loading: authLoading, googleAccessToken } = useAuth();
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [viewMode, setViewMode] = useState('board'); // 'board' or 'list'
-    const [filterPriority, setFilterPriority] = useState('all'); // 'all', 'urgent'
-    const [sortBy, setSortBy] = useState('newest'); // 'newest', 'oldest', 'dueAsc'
+    const [viewMode, setViewMode] = useState('board');
+    const [filterPriority, setFilterPriority] = useState('all');
+    const [sortBy, setSortBy] = useState('newest');
     const [columns, setColumns] = useState([
         { id: 'todo', title: 'To Do' },
         { id: 'inprogress', title: 'In Progress' },
@@ -24,11 +25,15 @@ export const TasksProvider = ({ children }) => {
     const [isNewUser, setIsNewUser] = useState(false);
     const [settingsLoading, setSettingsLoading] = useState(true);
 
+    // Google Calendar sync state
+    const [calendarSyncEnabled, setCalendarSyncEnabled] = useState(false);
+    const [calendarSyncing, setCalendarSyncing] = useState(false);
+
     // Filtered / Current Subjects & Tags
     const [subjects, setSubjects] = useState([]);
     const [tags, setTags] = useState([]);
 
-    // Fetch Settings (Subjects & Tags) from Firestore
+    // Fetch Settings (Subjects & Tags + Calendar Sync) from Firestore
     useEffect(() => {
         if (!user) {
             setSettingsLoading(false);
@@ -43,11 +48,12 @@ export const TasksProvider = ({ children }) => {
             if (docSnap.exists()) {
                 setSubjects(docSnap.data().subjects || []);
                 setTags(docSnap.data().tags || []);
+                setCalendarSyncEnabled(docSnap.data().calendarSyncEnabled || false);
                 setIsNewUser(false);
             } else {
-                // New user! Do not auto-initialize.
                 setSubjects([]);
                 setTags([]);
+                setCalendarSyncEnabled(false);
                 setIsNewUser(true);
             }
             setSettingsLoading(false);
@@ -80,19 +86,17 @@ export const TasksProvider = ({ children }) => {
                     id: doc.id,
                     ...doc.data()
                 }));
-                // Ensure date formatting consistency or fallback
                 const safeTasks = tasksData.map(t => ({
                     ...t,
                     date: t.date || 'No Date'
                 }));
                 setTasks(safeTasks);
                 setLoading(false);
-                setError(null); // Clear error on success
+                setError(null);
             }, (err) => {
                 console.error("Error fetching tasks: ", err);
                 setError(err.message);
                 setLoading(false);
-                // Fallback to local state if Firebase fails AND it wasn't a permission error
                 if (tasks.length === 0 && err.code !== 'permission-denied') {
                     setTasks([
                         { id: '1', title: 'Lab Report: Thermodynamics', status: 'todo', subject: 'Physics', date: '23:59 PM', isUrgent: true, source: 'telegram' },
@@ -111,15 +115,22 @@ export const TasksProvider = ({ children }) => {
 
     const addTask = async (newTask) => {
         try {
-            await addDoc(collection(db, "tasks"), {
+            const docRef = await addDoc(collection(db, "tasks"), {
                 ...newTask,
                 userId: user.uid,
                 status: 'todo',
                 createdAt: serverTimestamp()
             });
+
+            // Auto-sync to Google Calendar
+            if (calendarSyncEnabled && googleAccessToken) {
+                const eventId = await createCalendarEvent(googleAccessToken, { ...newTask, id: docRef.id });
+                if (eventId) {
+                    await updateDoc(docRef, { googleEventId: eventId });
+                }
+            }
         } catch (err) {
             console.error("Error adding task: ", err);
-            // Optimistic update for fallback
             setTasks(prev => [{ ...newTask, id: Date.now().toString(), status: 'todo' }, ...prev]);
         }
     };
@@ -131,6 +142,14 @@ export const TasksProvider = ({ children }) => {
         try {
             const taskRef = doc(db, "tasks", taskId);
             await updateDoc(taskRef, updates);
+
+            // Auto-sync to Google Calendar
+            if (calendarSyncEnabled && googleAccessToken) {
+                const task = tasks.find(t => t.id === taskId);
+                if (task?.googleEventId) {
+                    await updateCalendarEvent(googleAccessToken, task.googleEventId, { ...task, ...updates });
+                }
+            }
         } catch (err) {
             console.error("Error updating task: ", err);
         }
@@ -142,20 +161,34 @@ export const TasksProvider = ({ children }) => {
 
         try {
             const taskRef = doc(db, "tasks", taskId);
-            await updateDoc(taskRef, {
-                status: newStatus
-            });
+            await updateDoc(taskRef, { status: newStatus });
+
+            // Auto-sync status change to Google Calendar
+            if (calendarSyncEnabled && googleAccessToken) {
+                const task = tasks.find(t => t.id === taskId);
+                if (task?.googleEventId) {
+                    await updateCalendarEvent(googleAccessToken, task.googleEventId, { ...task, status: newStatus });
+                }
+            }
         } catch (err) {
             console.error("Error moving task: ", err);
         }
     };
 
     const deleteTask = async (taskId) => {
+        // Get task before removing (for calendar event deletion)
+        const task = tasks.find(t => t.id === taskId);
+
         // Optimistic update
         setTasks(prev => prev.filter(t => t.id !== taskId));
 
         try {
             await deleteDoc(doc(db, "tasks", taskId));
+
+            // Auto-delete from Google Calendar
+            if (calendarSyncEnabled && googleAccessToken && task?.googleEventId) {
+                await deleteCalendarEvent(googleAccessToken, task.googleEventId);
+            }
         } catch (err) {
             console.error("Error deleting task: ", err);
         }
@@ -220,7 +253,6 @@ export const TasksProvider = ({ children }) => {
             setTags(updated);
             syncTags(updated);
 
-            // Optimistic update for tasks (optional but good)
             setTasks(prev => prev.map(t => {
                 if (t.tags && t.tags.includes(oldTag)) {
                     return { ...t, tags: t.tags.map(tag => tag === oldTag ? newTag : tag) };
@@ -235,17 +267,47 @@ export const TasksProvider = ({ children }) => {
             const updated = subjects.map(s => s === oldSubject ? newSubject : s);
             setSubjects(updated);
             syncSubjects(updated);
-
-            // Also update all tasks with this subject
-            // This is extensive, but better for consistency
-            // For now, simpler implementation: prompt user they might need to update tasks manually or handle it later
-            // But let's verify if we should do it automatically.
-            // For a PROD readiness, we SHOULD update tasks.
-            // Let's iterate local tasks first for optimistic UI
             setTasks(prev => prev.map(t => t.subject === oldSubject ? { ...t, subject: newSubject } : t));
-
-            // Then batch update Firestore (if needed) - Keeping it simple for now to avoid complexity explosions
         }
+    };
+
+    // Google Calendar sync controls
+    const toggleCalendarSync = async (enabled) => {
+        setCalendarSyncEnabled(enabled);
+        try {
+            const settingsRef = doc(db, 'users', user.uid, 'settings', 'general');
+            await setDoc(settingsRef, { calendarSyncEnabled: enabled }, { merge: true });
+        } catch (err) {
+            console.error("Error saving calendar sync setting:", err);
+        }
+    };
+
+    const syncAllToCalendar = async () => {
+        if (!googleAccessToken) {
+            console.warn('[GCal] No access token for full sync');
+            return;
+        }
+
+        setCalendarSyncing(true);
+        try {
+            const results = await syncAllTasks(googleAccessToken, tasks);
+
+            // Store googleEventIds on tasks in Firestore
+            for (const [taskId, eventId] of Object.entries(results)) {
+                const task = tasks.find(t => t.id === taskId);
+                if (task && !task.googleEventId) {
+                    try {
+                        const taskRef = doc(db, "tasks", taskId);
+                        await updateDoc(taskRef, { googleEventId: eventId });
+                    } catch (err) {
+                        console.error(`Error storing eventId for task ${taskId}:`, err);
+                    }
+                }
+            }
+        } catch (err) {
+            console.error("Error during full calendar sync:", err);
+        }
+        setCalendarSyncing(false);
     };
 
     const filteredTasks = tasks
@@ -264,7 +326,6 @@ export const TasksProvider = ({ children }) => {
                 return (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0);
             }
             if (sortBy === 'dueAsc') {
-                // Simple string comparison for now, assuming ISO or consistent format would be better but keeping simple
                 return (a.date || '').localeCompare(b.date || '');
             }
             return 0;
@@ -298,7 +359,12 @@ export const TasksProvider = ({ children }) => {
             setSortBy,
             error,
             isNewUser,
-            settingsLoading
+            settingsLoading,
+            // Google Calendar sync
+            calendarSyncEnabled,
+            toggleCalendarSync,
+            syncAllToCalendar,
+            calendarSyncing,
         }}>
             {children}
         </TasksContext.Provider>

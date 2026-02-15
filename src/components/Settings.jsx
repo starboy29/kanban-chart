@@ -1,8 +1,10 @@
 import { useTasks } from '../context/TasksContext';
+import { useAuth } from '../context/AuthContext';
 import { useState } from 'react';
 
 const Settings = () => {
-    const { subjects, addSubject, deleteSubject, updateSubject, tags, addTag, deleteTag, updateTag } = useTasks();
+    const { subjects, addSubject, deleteSubject, updateSubject, tags, addTag, deleteTag, updateTag, calendarSyncEnabled, toggleCalendarSync, syncAllToCalendar, calendarSyncing } = useTasks();
+    const { googleAccessToken, refreshGoogleToken } = useAuth();
     const [newSubject, setNewSubject] = useState('');
     const [editingSubject, setEditingSubject] = useState(null);
     const [editValue, setEditValue] = useState('');
@@ -214,6 +216,95 @@ const Settings = () => {
                             </div>
                         ))}
                     </div>
+                </div>
+
+                {/* Google Calendar Sync Section */}
+                <div className="p-6 border-b border-white/5">
+                    <div className="flex items-center gap-3 mb-4">
+                        <span className="material-symbols-rounded text-2xl text-blue-400">calendar_month</span>
+                        <h3 className="text-lg font-semibold">Google Calendar Sync</h3>
+                    </div>
+                    <p className="text-sm text-gray-400 mb-5">
+                        Automatically sync your tasks to Google Calendar. Once enabled, any task you create, edit, or delete will be reflected in your Google Calendar — viewable on all your devices including mobile.
+                    </p>
+
+                    {/* Sync Toggle */}
+                    <div className="flex items-center justify-between p-4 bg-[#27272a] rounded-xl border border-white/5 mb-4">
+                        <div className="flex items-center gap-3">
+                            <div className={`w-3 h-3 rounded-full ${calendarSyncEnabled ? 'bg-emerald-400 shadow-lg shadow-emerald-400/30' : 'bg-gray-600'}`}></div>
+                            <div>
+                                <p className="font-medium">{calendarSyncEnabled ? 'Sync Enabled' : 'Sync Disabled'}</p>
+                                <p className="text-xs text-gray-500">
+                                    {calendarSyncEnabled
+                                        ? 'Tasks are automatically synced to Google Calendar'
+                                        : 'Enable to auto-sync tasks to Google Calendar'}
+                                </p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => toggleCalendarSync(!calendarSyncEnabled)}
+                            className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none ${calendarSyncEnabled ? 'bg-emerald-500' : 'bg-gray-600'}`}
+                        >
+                            <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-md transition-transform ${calendarSyncEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                        </button>
+                    </div>
+
+                    {/* Connection Status */}
+                    <div className="flex items-center justify-between p-4 bg-[#27272a] rounded-xl border border-white/5 mb-4">
+                        <div className="flex items-center gap-3">
+                            <span className="material-symbols-rounded text-gray-400">account_circle</span>
+                            <div>
+                                <p className="text-sm font-medium">Google Account</p>
+                                <p className="text-xs text-gray-500">
+                                    {googleAccessToken ? 'Connected — Calendar access granted' : 'Not connected — sign out and sign back in to grant access'}
+                                </p>
+                            </div>
+                        </div>
+                        {!googleAccessToken && (
+                            <button
+                                onClick={refreshGoogleToken}
+                                className="px-3 py-1.5 bg-blue-500/20 text-blue-300 rounded-lg text-xs font-medium hover:bg-blue-500/30 transition-colors"
+                            >
+                                Connect
+                            </button>
+                        )}
+                        {googleAccessToken && (
+                            <span className="text-xs text-emerald-400 flex items-center gap-1">
+                                <span className="material-symbols-rounded text-[14px]">check_circle</span>
+                                Connected
+                            </span>
+                        )}
+                    </div>
+
+                    {/* Sync All Button */}
+                    {calendarSyncEnabled && googleAccessToken && (
+                        <button
+                            onClick={syncAllToCalendar}
+                            disabled={calendarSyncing}
+                            className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20"
+                        >
+                            {calendarSyncing ? (
+                                <>
+                                    <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
+                                    Syncing All Tasks...
+                                </>
+                            ) : (
+                                <>
+                                    <span className="material-symbols-rounded">sync</span>
+                                    Sync All Tasks Now
+                                </>
+                            )}
+                        </button>
+                    )}
+
+                    {/* Instructions */}
+                    {calendarSyncEnabled && (
+                        <div className="mt-4 p-3 bg-blue-500/5 border border-blue-500/10 rounded-lg">
+                            <p className="text-xs text-blue-200/70 leading-relaxed">
+                                <span className="font-medium text-blue-300">💡 Tip:</span> After syncing, open Google Calendar on your phone to see your tasks. Events will have a 📌 prefix and include your task details like subject, priority, and tags.
+                            </p>
+                        </div>
+                    )}
                 </div>
 
                 {/* Preferences Section */}

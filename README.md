@@ -1,6 +1,6 @@
 # 🎓 College Kanban Board
 
-A modern, collaborative task management application designed for students and academic teams. Built with React request.auth != null; (Firebase), and Tailwind CSS.
+A modern, collaborative task management application designed for students and academic teams. Built with React, Firebase, and Tailwind CSS.
 
 ## ✨ Features
 
@@ -19,6 +19,14 @@ A modern, collaborative task management application designed for students and ac
 -   **Color-Coded**: Visual distinction for different topics.
 -   **Global Sync**: Rename a subject, and it updates across all tasks instantly.
 
+### 📅 Google Calendar Auto-Sync
+-   **Automatic Sync**: Tasks are automatically pushed to Google Calendar when created, edited, or deleted.
+-   **Mobile Access**: See all your tasks on your phone via Google Calendar or Apple Calendar.
+-   **Priority-Based Events**: Urgent tasks appear at the top with 🚨 prefix, color-coded by priority.
+-   **Smart Reminders**: Urgent tasks get 4 reminders, high gets 3, medium gets 2, low gets 1.
+-   **One-Click Bulk Sync**: "Sync All Tasks Now" button to push all existing tasks at once.
+-   **Toggle On/Off**: Enable or disable sync anytime from Settings.
+
 ### 📥 Smart Inbox & Notifications
 -   **Actionable Inbox**: See "Urgent", "New (<24h)", and "Recently Completed" tasks.
 -   **Urgency Badges**: Red notification badge on the sidebar for urgent tasks.
@@ -36,6 +44,7 @@ A modern, collaborative task management application designed for students and ac
 -   **Frontend**: [React 19](https://react.dev/), [Vite](https://vitejs.dev/)
 -   **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
 -   **Backend**: [Firebase](https://firebase.google.com/) (Firestore & Auth)
+-   **Calendar**: [Google Calendar API](https://developers.google.com/calendar) (REST)
 -   **DnD**: [@dnd-kit](https://dndkit.com/)
 -   **Icons**: Material Symbols Rounded
 -   **Routing**: React Router v7
@@ -68,10 +77,41 @@ VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 VITE_FIREBASE_APP_ID=your_app_id
 ```
 
-### 4. Run Locally
+### 4. Enable Google Calendar API (Optional)
+To enable automatic Google Calendar sync:
+
+1.  Go to [Google Cloud Console](https://console.cloud.google.com/) and select your Firebase project.
+2.  Navigate to **APIs & Services → Library**.
+3.  Search for **"Google Calendar API"** and click **Enable**.
+4.  Go to **APIs & Services → OAuth consent screen**.
+5.  Add scope: `https://www.googleapis.com/auth/calendar.events`.
+6.  Set publishing status to **Testing** and add your email as a test user.
+
+> **Note**: Google Calendar sync works without any additional API keys. It uses the existing Firebase Google Sign-In and requests Calendar access during login.
+
+### 5. Run Locally
 ```bash
 npm run dev
 ```
+
+---
+
+## 📅 Using Google Calendar Sync
+
+1. **Sign out and sign back in** to grant Calendar permissions (one-time).
+2. Go to **Settings → Google Calendar Sync → Toggle ON**.
+3. Click **"Sync All Tasks Now"** to push existing tasks.
+4. From now on, every task change is reflected in Google Calendar automatically.
+5. Open Google Calendar on your phone — your tasks are there!
+
+### Priority Levels in Calendar
+
+| Priority | Calendar Title | Color | Reminders |
+|---|---|---|---|
+| Urgent | `!!! 🚨 URGENT: Task` | 🔴 Red | 4 (1 day, 1hr, 30min, at time) |
+| High | `!! ⚠️ HIGH: Task` | 🟠 Orange | 3 (1 day, 1hr, at time) |
+| Medium | `! 📌 Task` | 🔵 Blue | 2 (1 day, 1hr) |
+| Low | `📝 Task` | 🟢 Green | 1 (1hr) |
 
 ---
 

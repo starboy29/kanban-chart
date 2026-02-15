@@ -16,7 +16,7 @@ import {
 } from 'date-fns';
 
 const Calendar = () => {
-    const { tasks } = useTasks();
+    const { tasks, calendarSyncEnabled, calendarSyncing, syncAllToCalendar } = useTasks();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState(new Date());
 
@@ -67,12 +67,31 @@ const Calendar = () => {
                         </button>
                     </div>
                 </div>
-                <button
-                    onClick={goToToday}
-                    className="px-4 py-2 bg-[#27272a] hover:bg-[#3f3f46] border border-white/10 rounded-xl text-sm font-medium transition-colors"
-                >
-                    Today
-                </button>
+                <div className="flex items-center gap-3">
+                    {/* Google Calendar Sync Status */}
+                    {calendarSyncEnabled && (
+                        <div className="flex items-center gap-2 px-3 py-2 bg-[#27272a] border border-white/10 rounded-xl text-sm">
+                            {calendarSyncing ? (
+                                <>
+                                    <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></span>
+                                    <span className="text-yellow-300 text-xs">Syncing...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                                    <span className="text-emerald-300 text-xs">Google Calendar synced</span>
+                                </>
+                            )}
+                        </div>
+                    )}
+
+                    <button
+                        onClick={goToToday}
+                        className="px-4 py-2 bg-[#27272a] hover:bg-[#3f3f46] border border-white/10 rounded-xl text-sm font-medium transition-colors"
+                    >
+                        Today
+                    </button>
+                </div>
             </div>
 
             {/* Calendar Grid */}
@@ -128,6 +147,9 @@ const Calendar = () => {
                                             `}
                                             title={task.title}
                                         >
+                                            {task.googleEventId && (
+                                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1 align-middle" title="Synced to Google Calendar"></span>
+                                            )}
                                             {task.title}
                                         </div>
                                     ))}
