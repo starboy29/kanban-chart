@@ -41,31 +41,21 @@ const getStatusColor = (pct) => {
     };
 };
 
-// ── default subjects from SRM portal ─────────────────
-const DEFAULT_SUBJECTS = [
-    { id: '1', code: '21CSC204J', name: 'Design & Analysis of Algorithms', attended: 16, total: 24 },
-    { id: '2', code: '21CSC205P', name: 'Database Management Systems', attended: 13, total: 19 },
-    { id: '3', code: '21CSC206T', name: 'Artificial Intelligence', attended: 10, total: 14 },
-    { id: '4', code: '21CSE251T', name: 'Digital Image Processing', attended: 12, total: 15 },
-    { id: '5', code: '21DCS201P', name: 'Design Thinking & Methodology', attended: 15, total: 18 },
-    { id: '6', code: '21MAB204T', name: 'Probability & Queuing Theory', attended: 13, total: 16 },
-    { id: '7', code: '21PDH209T', name: 'Social Engineering', attended: 6, total: 8 },
-    { id: '8', code: 'CLC2', name: 'Critical & Creative Thinking Skills', attended: 6, total: 8 },
-];
-
+// ── Main Component ───────────────────────────────────
 const Attendance = () => {
     const { attendanceData, updateAttendance } = useTasks();
     const [targetPct, setTargetPct] = useState(75);
     const [showAddModal, setShowAddModal] = useState(false);
     const [editingSubjectId, setEditingSubjectId] = useState(null);
 
-    const subjects = attendanceData?.length > 0 ? attendanceData : DEFAULT_SUBJECTS;
+    const subjects = attendanceData || [];
 
     const totalAttended = subjects.reduce((s, sub) => s + sub.attended, 0);
     const totalClasses = subjects.reduce((s, sub) => s + sub.total, 0);
-    const overallPct = calcPercentage(totalAttended, totalClasses);
+    const overallPct = totalClasses === 0 ? 0 : calcPercentage(totalAttended, totalClasses);
     const status = getStatusColor(overallPct);
     const riskCount = subjects.filter(s => calcPercentage(s.attended, s.total) < 75).length;
+
 
     const handleMark = (id, present) => {
         const updated = subjects.map(s => {
@@ -112,8 +102,8 @@ const Attendance = () => {
                                     key={t}
                                     onClick={() => setTargetPct(t)}
                                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${targetPct === t
-                                            ? 'bg-[var(--color-primary)] text-white shadow-lg'
-                                            : 'text-gray-500 hover:text-white'
+                                        ? 'bg-[var(--color-primary)] text-white shadow-lg'
+                                        : 'text-gray-500 hover:text-white'
                                         }`}
                                 >
                                     {t}%
@@ -188,100 +178,120 @@ const Attendance = () => {
                 </div>
 
                 {/* Grid of Subject Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {subjects.map(sub => {
-                        const pct = calcPercentage(sub.attended, sub.total);
-                        const s = getStatusColor(pct);
-                        const isEditing = editingSubjectId === sub.id;
+                {subjects.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 bg-[#18181b] rounded-3xl border border-dashed border-white/10">
+                        <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-4">
+                            <span className="material-symbols-rounded text-gray-500 text-[32px]">percent</span>
+                        </div>
+                        <h3 className="text-xl font-bold text-white mb-2">No subjects tracked yet</h3>
+                        <p className="text-gray-500 text-sm max-w-xs text-center mb-8">
+                            Add your subjects to start tracking your attendance and bunk possibilities.
+                        </p>
+                        <button
+                            onClick={() => setShowAddModal(true)}
+                            className="px-6 py-3 bg-[var(--color-primary)] rounded-xl text-white font-black hover:opacity-90 transition-opacity flex items-center gap-2"
+                        >
+                            <span className="material-symbols-rounded">add</span>
+                            Get Started
+                        </button>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {subjects.map(sub => {
 
-                        return (
-                            <div
-                                key={sub.id}
-                                className="group relative bg-[#18181b] hover:bg-[#1a1a1e] rounded-2xl border border-white/5 hover:border-white/10 transition-all duration-300 p-5 overflow-hidden"
-                            >
-                                {/* Indicator line */}
-                                <div className={`absolute left-0 top-0 bottom-0 w-1 ${s.bg}`} />
+                            const pct = calcPercentage(sub.attended, sub.total);
+                            const s = getStatusColor(pct);
+                            const isEditing = editingSubjectId === sub.id;
 
-                                <div className="space-y-5">
-                                    {/* Card Header */}
-                                    <div className="flex justify-between items-start gap-3">
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <span className="text-[10px] font-black uppercase tracking-wider text-gray-500 bg-white/5 px-2 py-0.5 rounded">
-                                                    {sub.code}
-                                                </span>
+                            return (
+                                <div
+                                    key={sub.id}
+                                    className="group relative bg-[#18181b] hover:bg-[#1a1a1e] rounded-2xl border border-white/5 hover:border-white/10 transition-all duration-300 p-5 overflow-hidden"
+                                >
+                                    {/* Indicator line */}
+                                    <div className={`absolute left-0 top-0 bottom-0 w-1 ${s.bg}`} />
+
+                                    <div className="space-y-5">
+                                        {/* Card Header */}
+                                        <div className="flex justify-between items-start gap-3">
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 mb-1">
+                                                    <span className="text-[10px] font-black uppercase tracking-wider text-gray-500 bg-white/5 px-2 py-0.5 rounded">
+                                                        {sub.code}
+                                                    </span>
+                                                </div>
+                                                <h3 className="text-base font-bold text-white leading-tight truncate">{sub.name}</h3>
                                             </div>
-                                            <h3 className="text-base font-bold text-white leading-tight truncate">{sub.name}</h3>
-                                        </div>
-                                        <div className="text-right flex flex-col items-end">
-                                            <span className={`text-xl font-black ${s.text}`}>{pct.toFixed(1)}%</span>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <button
-                                                    onClick={() => setEditingSubjectId(isEditing ? null : sub.id)}
-                                                    className={`p-1.5 rounded-lg transition-colors ${isEditing ? 'bg-white/10 text-white' : 'text-gray-600 hover:text-white hover:bg-white/5'}`}
-                                                >
-                                                    <span className="material-symbols-rounded text-[18px]">{isEditing ? 'done' : 'edit'}</span>
-                                                </button>
-                                                {isEditing && (
-                                                    <button onClick={() => handleDelete(sub.id)} className="p-1.5 text-rose-500 hover:bg-rose-500/10 rounded-lg">
-                                                        <span className="material-symbols-rounded text-[18px]">delete</span>
+                                            <div className="text-right flex flex-col items-end">
+                                                <span className={`text-xl font-black ${s.text}`}>{pct.toFixed(1)}%</span>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <button
+                                                        onClick={() => setEditingSubjectId(isEditing ? null : sub.id)}
+                                                        className={`p-1.5 rounded-lg transition-colors ${isEditing ? 'bg-white/10 text-white' : 'text-gray-600 hover:text-white hover:bg-white/5'}`}
+                                                    >
+                                                        <span className="material-symbols-rounded text-[18px]">{isEditing ? 'done' : 'edit'}</span>
                                                     </button>
-                                                )}
+                                                    {isEditing && (
+                                                        <button onClick={() => handleDelete(sub.id)} className="p-1.5 text-rose-500 hover:bg-rose-500/10 rounded-lg">
+                                                            <span className="material-symbols-rounded text-[18px]">delete</span>
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
 
-                                    {/* Progress Strip */}
-                                    <div className="relative py-2">
-                                        <div className="h-1.5 w-full bg-[#2a2a2e] rounded-full overflow-hidden">
-                                            <div
-                                                className={`h-full rounded-full ${s.bg} transition-all duration-500`}
-                                                style={{ width: `${Math.min(pct, 100)}%` }}
-                                            />
-                                        </div>
-                                        <div className="flex justify-between mt-2 text-[11px] font-bold text-gray-500 uppercase tracking-tighter">
-                                            <span>{sub.attended} Present</span>
-                                            <span>{sub.total - sub.attended} Absent</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Smart Bunk Info */}
-                                    <div className={`py-3 px-4 rounded-xl ${s.light} text-xs font-semibold ${s.text} flex items-center gap-2`}>
-                                        <span className="material-symbols-rounded text-[16px]">
-                                            {pct < targetPct ? 'menu_book' : 'bed'}
-                                        </span>
-                                        {pct < targetPct ? (
-                                            <>Attend {classesToReachTarget(sub.attended, sub.total, targetPct)} more classes</>
-                                        ) : (
-                                            <>Can skip {classesCanSkip(sub.attended, sub.total, targetPct)} classes</>
-                                        )}
-                                    </div>
-
-                                    {/* Action Buttons or Edit Controls */}
-                                    <div className="pt-2">
-                                        {isEditing ? (
-                                            <div className="grid grid-cols-2 gap-3">
-                                                <EditInput label="Present" value={sub.attended} onChange={v => handleEdit(sub.id, 'attended', v)} />
-                                                <EditInput label="Total" value={sub.total} onChange={v => handleEdit(sub.id, 'total', v)} />
-                                            </div>
-                                        ) : (
-                                            <div className="flex gap-2">
-                                                <ActionButton
-                                                    icon="check" label="Present" color="bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-white"
-                                                    onClick={() => handleMark(sub.id, true)}
-                                                />
-                                                <ActionButton
-                                                    icon="close" label="Absent" color="bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white"
-                                                    onClick={() => handleMark(sub.id, false)}
+                                        {/* Progress Strip */}
+                                        <div className="relative py-2">
+                                            <div className="h-1.5 w-full bg-[#2a2a2e] rounded-full overflow-hidden">
+                                                <div
+                                                    className={`h-full rounded-full ${s.bg} transition-all duration-500`}
+                                                    style={{ width: `${Math.min(pct, 100)}%` }}
                                                 />
                                             </div>
-                                        )}
+                                            <div className="flex justify-between mt-2 text-[11px] font-bold text-gray-500 uppercase tracking-tighter">
+                                                <span>{sub.attended} Present</span>
+                                                <span>{sub.total - sub.attended} Absent</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Smart Bunk Info */}
+                                        <div className={`py-3 px-4 rounded-xl ${s.light} text-xs font-semibold ${s.text} flex items-center gap-2`}>
+                                            <span className="material-symbols-rounded text-[16px]">
+                                                {pct < targetPct ? 'menu_book' : 'bed'}
+                                            </span>
+                                            {pct < targetPct ? (
+                                                <>Attend {classesToReachTarget(sub.attended, sub.total, targetPct)} more classes</>
+                                            ) : (
+                                                <>Can skip {classesCanSkip(sub.attended, sub.total, targetPct)} classes</>
+                                            )}
+                                        </div>
+
+                                        {/* Action Buttons or Edit Controls */}
+                                        <div className="pt-2">
+                                            {isEditing ? (
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <EditInput label="Present" value={sub.attended} onChange={v => handleEdit(sub.id, 'attended', v)} />
+                                                    <EditInput label="Total" value={sub.total} onChange={v => handleEdit(sub.id, 'total', v)} />
+                                                </div>
+                                            ) : (
+                                                <div className="flex gap-2">
+                                                    <ActionButton
+                                                        icon="check" label="Present" color="bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-white"
+                                                        onClick={() => handleMark(sub.id, true)}
+                                                    />
+                                                    <ActionButton
+                                                        icon="close" label="Absent" color="bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white"
+                                                        onClick={() => handleMark(sub.id, false)}
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        );
-                    })}
-                </div>
+                            );
+                        })}
+                    </div>
+                )}
             </div>
 
             {showAddModal && <AddModal onAdd={s => { updateAttendance([...subjects, { ...s, id: Date.now().toString() }]); setShowAddModal(false); }} onClose={() => setShowAddModal(false)} />}

@@ -4,11 +4,10 @@ import { useState } from 'react';
 
 const Settings = () => {
     const { subjects, addSubject, deleteSubject, updateSubject, tags, addTag, deleteTag, updateTag, calendarSyncEnabled, toggleCalendarSync, syncAllToCalendar, calendarSyncing } = useTasks();
-    const { googleAccessToken, refreshGoogleToken } = useAuth();
+    const { user, refreshGoogleToken, googleAccessToken } = useAuth(); // Use AuthContext properly
     const [newSubject, setNewSubject] = useState('');
     const [editingSubject, setEditingSubject] = useState(null);
     const [editValue, setEditValue] = useState('');
-
     const handleAddSubject = (e) => {
         e.preventDefault();
         if (newSubject.trim()) {
@@ -66,6 +65,11 @@ const Settings = () => {
         setEditTagValue('');
     };
 
+    const getInitials = (name) => {
+        if (!name) return '?';
+        return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    };
+
     return (
         <div className="p-8 text-white max-w-4xl mx-auto custom-scrollbar overflow-y-auto h-full pb-20">
             <h2 className="text-3xl font-bold mb-8">Settings</h2>
@@ -76,19 +80,23 @@ const Settings = () => {
                     <h3 className="text-lg font-semibold mb-4">Account</h3>
                     <div className="flex items-center gap-4 mb-6">
                         <div className="w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-secondary)] p-[2px]">
-                            <img
-                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZtUDlAHK8bBL5U8R0J8Tic_1nzdTOrdX3jwkbDDZ7wUK5EEJtGB-Mv4QdGAok-FQPXpG1B4q7u2WOFEvklyseJ0_n7meoprUHPki16JlwRXZ_E8-p_7ogIpOGEjgLTlUFmokoubr5t1HoG3F_cXA6IaUe3utAytJqRGZqN3tFl7Wbl2qIO-l2zhcvqGICEf-QIRahNkzNG00l8xeFaT9QeaUrxAvs71Vbbn56xWdnMVnCPZMl-l5Petcyrwdm7KBq3yL3k0ZUqKc"
-                                alt="User Avatar"
-                                className="w-full h-full object-cover rounded-full border-2 border-[#18181b]"
-                            />
+                            {user?.photoURL ? (
+                                <img
+                                    src={user.photoURL}
+                                    alt="User Avatar"
+                                    className="w-full h-full object-cover rounded-full border-2 border-[#18181b]"
+                                />
+                            ) : (
+                                <div className="w-full h-full bg-[#1c191f] rounded-full flex items-center justify-center text-sm font-bold text-white border-2 border-[#18181b]">
+                                    {getInitials(user?.displayName || user?.email)}
+                                </div>
+                            )}
                         </div>
                         <div>
-                            <h4 className="font-medium">Alex Morgan</h4>
-                            <p className="text-sm text-gray-400">alex.morgan@university.edu</p>
+                            <h4 className="font-medium">{user?.displayName || 'Student'}</h4>
+                            <p className="text-sm text-gray-400">{user?.email}</p>
+                            <p className="text-[10px] text-gray-600 mt-1 uppercase tracking-widest font-mono">UID: {user?.uid}</p>
                         </div>
-                        <button className="ml-auto px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-medium transition-colors">
-                            Edit Profile
-                        </button>
                     </div>
                 </div>
 

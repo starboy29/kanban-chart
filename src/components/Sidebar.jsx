@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTasks } from '../context/TasksContext';
+import { useAuth } from '../context/AuthContext';
 
 const Sidebar = ({ onNewTask, onNavigate }) => {
-    // 1. Destructure 'subjects' from context
     const { subjects, tasks } = useTasks();
+    const { user, logout } = useAuth(); // Import user and logout
 
     // 2. Sort subjects alphabetically for consistency
     const activeSubjects = [...subjects].sort();
@@ -28,22 +29,44 @@ const Sidebar = ({ onNewTask, onNavigate }) => {
         return map[subject] || 'school'; // fallback icon
     };
 
+    const getInitials = (name) => {
+        if (!name) return '?';
+        return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    };
+
     return (
         <aside className="w-64 h-full border-r border-white/10 flex flex-col bg-[#141118]">
             {/* User Profile & Action */}
             <div className="p-6 pb-2">
-                <div className="flex items-center gap-3 mb-6">
-                    <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-secondary)] p-[2px]">
-                        <img
-                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZtUDlAHK8bBL5U8R0J8Tic_1nzdTOrdX3jwkbDDZ7wUK5EEJtGB-Mv4QdGAok-FQPXpG1B4q7u2WOFEvklyseJ0_n7meoprUHPki16JlwRXZ_E8-p_7ogIpOGEjgLTlUFmokoubr5t1HoG3F_cXA6IaUe3utAytJqRGZqN3tFl7Wbl2qIO-l2zhcvqGICEf-QIRahNkzNG00l8xeFaT9QeaUrxAvs71Vbbn56xWdnMVnCPZMl-l5Petcyrwdm7KBq3yL3k0ZUqKc"
-                            alt="User Avatar"
-                            className="w-full h-full object-cover rounded-full border-2 border-[#141118]"
-                        />
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                        <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-secondary)] p-[2px]">
+                            {user?.photoURL ? (
+                                <img
+                                    src={user.photoURL}
+                                    alt="User Avatar"
+                                    className="w-full h-full object-cover rounded-full border-2 border-[#141118]"
+                                />
+                            ) : (
+                                <div className="w-full h-full bg-[#1c191f] rounded-full flex items-center justify-center text-xs font-bold text-white border-2 border-[#141118]">
+                                    {getInitials(user?.displayName || user?.email)}
+                                </div>
+                            )}
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                            <h1 className="text-sm font-semibold leading-tight text-white truncate">
+                                {user?.displayName || 'Student'}
+                            </h1>
+                            <p className="text-[10px] text-gray-500 truncate">{user?.email}</p>
+                        </div>
                     </div>
-                    <div className="flex flex-col">
-                        <h1 className="text-sm font-semibold leading-tight text-white">Alex Morgan</h1>
-                        <p className="text-xs text-gray-400">Fall Semester '24</p>
-                    </div>
+                    <button
+                        onClick={logout}
+                        className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-white/5 rounded-lg transition-colors"
+                        title="Sign Out"
+                    >
+                        <span className="material-symbols-rounded text-[18px]">logout</span>
+                    </button>
                 </div>
 
                 <button
