@@ -3,7 +3,7 @@ import { useTasks } from '../context/TasksContext';
 import { format } from 'date-fns';
 
 const NewTaskModal = ({ onClose }) => {
-    const { addTask, subjects, tags: globalTags, addTag } = useTasks();
+    const { addTask, subjects, addSubject, tags: globalTags, addTag } = useTasks();
     const [title, setTitle] = useState('');
     const [subject, setSubject] = useState(subjects[0] || 'Physics');
     const [date, setDate] = useState('');
@@ -16,6 +16,8 @@ const NewTaskModal = ({ onClose }) => {
     const [estimatedTime, setEstimatedTime] = useState('');
     const [attachments, setAttachments] = useState([]);
     const [processing, setProcessing] = useState(false);
+    const [isCreatingSubject, setIsCreatingSubject] = useState(false);
+    const [newSubjectName, setNewSubjectName] = useState('');
 
     // Collapsible Sections State
     const [isDetailsOpen, setIsDetailsOpen] = useState(true);
@@ -92,9 +94,20 @@ const NewTaskModal = ({ onClose }) => {
                 });
             }));
 
+            let finalSubject = subject;
+
+            // Handle inline subject creation
+            if (isCreatingSubject && newSubjectName.trim()) {
+                const trimmedSub = newSubjectName.trim();
+                if (!subjects.includes(trimmedSub)) {
+                    await addSubject(trimmedSub);
+                }
+                finalSubject = trimmedSub;
+            }
+
             const newTask = {
                 title,
-                subject,
+                subject: finalSubject,
                 date: date || '', // Use ISO date string or empty
                 priority,
                 isUrgent: priority === 'urgent', // Backward compatibility for now
@@ -151,16 +164,40 @@ const NewTaskModal = ({ onClose }) => {
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-gray-400 mb-1.5">Subject / Category</label>
-                                <select
-                                    value={subject}
-                                    onChange={(e) => setSubject(e.target.value)}
-                                    className="w-full bg-[#27272a] border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-indigo-500 outline-none appearance-none"
-                                >
-                                    {subjects.map(sub => (
-                                        <option key={sub} value={sub}>{sub}</option>
-                                    ))}
-                                </select>
+                                <label className="block text-sm font-medium text-gray-400 mb-1.5 flex justify-between items-center">
+                                    Subject / Category
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setIsCreatingSubject(!isCreatingSubject);
+                                            if (!isCreatingSubject) setNewSubjectName('');
+                                        }}
+                                        className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded transition-all ${isCreatingSubject ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' : 'bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20'}`}
+                                    >
+                                        {isCreatingSubject ? 'Cancel' : '+ New Subject'}
+                                    </button>
+                                </label>
+                                {isCreatingSubject ? (
+                                    <input
+                                        type="text"
+                                        value={newSubjectName}
+                                        onChange={(e) => setNewSubjectName(e.target.value)}
+                                        placeholder="New subject name..."
+                                        className="w-full bg-[#27272a] border border-indigo-500/50 rounded-xl px-4 py-2.5 text-white focus:border-indigo-500 outline-none placeholder:text-gray-600"
+                                        autoFocus
+                                    />
+                                ) : (
+                                    <select
+                                        value={subject}
+                                        onChange={(e) => setSubject(e.target.value)}
+                                        className="w-full bg-[#27272a] border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-indigo-500 outline-none appearance-none"
+                                    >
+                                        {subjects.length === 0 && <option value="">No subjects found</option>}
+                                        {subjects.map(sub => (
+                                            <option key={sub} value={sub}>{sub}</option>
+                                        ))}
+                                    </select>
+                                )}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-400 mb-1.5">Due Date</label>

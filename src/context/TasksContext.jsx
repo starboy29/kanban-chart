@@ -218,7 +218,7 @@ export const TasksProvider = ({ children }) => {
         if (!subjects.includes(newSubject)) {
             const updated = [...subjects, newSubject];
             setSubjects(updated);
-            syncSubjects(updated);
+            return syncSubjects(updated);
         }
     };
 
@@ -242,7 +242,7 @@ export const TasksProvider = ({ children }) => {
         if (!tags.includes(newTag)) {
             const updated = [...tags, newTag];
             setTags(updated);
-            syncTags(updated);
+            return syncTags(updated);
         }
     };
 
